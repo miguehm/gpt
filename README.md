@@ -2,6 +2,12 @@
 
 A CLI tool send prompts to chatgpt
 
+## TODO
+
+- [ ] Support Gemini
+- [ ] `--hot` to quick responses
+- [ ] Chat history
+
 ## Auth
 
 Add to .bashrc file
