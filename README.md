@@ -4,9 +4,10 @@ A CLI tool send prompts to chatgpt
 
 ## TODO
 
-- [ ] Support Gemini
-- [ ] `--hot` to quick responses
-- [ ] Chat history
+- [ ] Support Gemini.
+- [ ] `--hot` to quick responses.
+- [ ] Multiple chats.
+  - [ ] Send chat history for more context.
 
 ## Auth
 
