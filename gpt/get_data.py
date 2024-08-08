@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 initial_query = """
 CREATE TABLE IF NOT EXISTS session (
   id TEXT PRIMARY KEY NOT NULL,
-  title TEXT NOT NULL
+  title TEXT
 );
 
 CREATE TABLE IF NOT EXISTS chat (
@@ -69,7 +69,7 @@ def initialize_db():
 
 
 def get_sessions() -> dict:
-    initialize_db()
+    # initialize_db()
     # Connect to database
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -127,20 +127,53 @@ def insert_to_chat(session_id: str, role: str, message: str):
     conn.close()
 
 
+def insert_session_id(id: str):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO session (id) VALUES (?)",
+        (id,
+         ))
+    conn.commit()
+    conn.close()
+
+
+def set_session_title(id: str, title: str):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE session SET title = ? WHERE id = ?",
+        (title,
+         id
+         ))
+    conn.commit()
+    conn.close()
+
+
 async def create_session(prompt: str, session_id: str):
 
     # create session in database
+    insert_session_id(session_id)
 
     messages = []
+
+    # add option to personalize system text
+    system_text = """
+    Eres un asistente responde solo lo referente al prompt,
+    omite los saludos o despedidas.
+    Cuando respondas, deberas devolver un texto de la siquiente manera:
+    
+    Titulo corto sobre lo que trata tu respuesta
+
+    Tu respuesta
+    """
 
     initial_sys_message = {
         "role": "system",
         "content": [
             {
                 "type": "text",
-                "text": "Eres un asistente que habla de forma breve y concisa"
-                # Especificar que la respuesta debe ser en json para incluir un
-                # titulo corto para la session database
+                "text": system_text
             }
         ]
     }
@@ -175,6 +208,16 @@ async def create_session(prompt: str, session_id: str):
     #
     # messages.append(json_result)
 
+    # get the first line of a string
+    title = result.split("\n")[0]
+
+    set_session_title(session_id, title)
+
+    # remove the firsts two lines of a string
+    result = "\n".join(result.split("\n")[2:])
+
+    # set_session_title(session_id, title)
+
     insert_to_chat(session_id,
                    "system",
                    initial_sys_message["content"][0]["text"])
@@ -185,22 +228,20 @@ async def create_session(prompt: str, session_id: str):
                    "assistant",
                    result)
 
-    # Usar el result para obtener el titulo de la session
-    # y actualizar la columna title
-
     # return messages
 
 if __name__ == "__main__":
-    # sessions = get_sessions()
-    #
+    initialize_db()
+    sessions = get_sessions()
+
     # # Print all sessions properly
-    # rprint("Saved Sessions:")
+    # rprint("[bold blue]Saved Sessions[bold blue/]")
     # for session in sessions:
     #     print(f"{session['id']}: {session['title']}")
 
     uuid = str(uuid4())[:8]
     respuesta = asyncio.run(create_session(
-        "Un hola mundo en javascript",
+        "Tipos de dato en rust",
         uuid))
 
     # print(respuesta)
