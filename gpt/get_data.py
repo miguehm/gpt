@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS configuration (
 );
 """
 
-home_dir = os.path.expanduser("~")
-data_path = os.path.join(home_dir, ".terminal-gpt")
+home_dir = os.path.expanduser("~/.config/")
+data_path = os.path.join(home_dir, "terminal-gpt")
 db_path = os.path.join(data_path, "database.db")
 
 
@@ -39,6 +39,8 @@ def initialize_db():
     if not os.path.exists(data_path):
         logging.info("Data directory not found. Creating data directory...")
         os.makedirs(data_path)
+    else:
+        logging.info("Data directory has been created")
 
     # check if database.db exists
     if not os.path.exists(db_path):
@@ -49,6 +51,8 @@ def initialize_db():
         conn.commit()
         conn.close()
         logging.info("Database created successfully.")
+    else:
+        logging.info("Database file has been created")
 
 
 def get_sessions() -> dict:
@@ -67,7 +71,7 @@ def get_sessions() -> dict:
 
 if __name__ == "__main__":
     sessions = get_sessions()
-    rprint("[italic red]Hello[/italic red] World!")
+    # rprint("[italic red]Hello[/italic red] World!")
 
     # Print all sessions properly
     rprint("Saved Sessions:")
