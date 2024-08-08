@@ -139,6 +139,8 @@ async def create_session(prompt: str, session_id: str):
             {
                 "type": "text",
                 "text": "Eres un asistente que habla de forma breve y concisa"
+                # Especificar que la respuesta debe ser en json para incluir un
+                # titulo corto para la session database
             }
         ]
     }
@@ -182,6 +184,9 @@ async def create_session(prompt: str, session_id: str):
     insert_to_chat(session_id,
                    "assistant",
                    result)
+
+    # Usar el result para obtener el titulo de la session
+    # y actualizar la columna title
 
     # return messages
 
