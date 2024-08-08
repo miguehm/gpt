@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gpt"
-version = "0.2"
+version = "0.3"
 description = "OpenAI GPT chat from linux terminal"
 authors = [
     { name="miguehm", email="miguel.hernandezmor@alumno.buap.mx" }
@@ -12,7 +12,8 @@ authors = [
 dependencies = [
     "openai>=1.38.0",
     "typer>=0.12.3",
-    "rich>=13.7.1"
+    "rich>=13.7.1",
+    "readchar>=4.1.0"
 ]
 
 [project.scripts]
