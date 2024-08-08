@@ -1,5 +1,8 @@
 from openai import OpenAI
+from typing import Optional
 from typer import Typer
+from typer import Argument
+from typing_extensions import Annotated
 from rich.console import Console
 from rich.markdown import Markdown
 from rich import print as rprint
@@ -15,9 +18,9 @@ console = Console()
 
 
 @app.command()
-def main(prompt: str = ""):
+def main(prompt: Annotated[Optional[str], Argument()] = None):
 
-    if prompt == "":
+    if prompt is None:
         sessions = get_sessions()
 
         # Print all sessions properly
@@ -45,8 +48,9 @@ def main(prompt: str = ""):
         frequency_penalty=0,
         presence_penalty=0
     )
-    md = Markdown(response.choices[0].message.content)
-    console.print(md)
+    # md = Markdown(response.choices[0].message.content)
+    # console.print(md)
+    print(response)
 
 
 if __name__ == "__main__":
