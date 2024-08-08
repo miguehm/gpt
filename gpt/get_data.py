@@ -26,6 +26,8 @@ logging.getLogger("openai").setLevel(logging.WARNING)
 def initialize_db():
     # Check if .terminal-gpt directory exists
 
+    # TODO:
+    # - Initial configuration query
     initial_query = """
     CREATE TABLE IF NOT EXISTS session (
       id TEXT PRIMARY KEY NOT NULL,
@@ -80,14 +82,6 @@ def get_sessions() -> dict:
     sessions = [{"id": session[0], "title": session[1]}
                 for session in sessions]
     return sessions
-
-
-"""
-ChatCompletion(id='chatcmpl-9tlWjJZDCdKHNlzvv9Yjl8CzSZVC4', choices=[Choice(finish_reason='stop', index=0, logprobs=None, message=ChatCompletionMessag
-e(content='Hola, ¿cómo estás? ¿En qué puedo ayudarte hoy?', refusal=None, role='assistant', function_call=None, tool_calls=None))], created=1723077761
-, model='gpt-4o-2024-05-13', object='chat.completion', service_tier=None, system_fingerprint='fp_c9aa9c0491', usage=CompletionUsage(completion_tokens=
-13, prompt_tokens=8, total_tokens=21))
-"""
 
 
 async def send_prompt(messages: list):
