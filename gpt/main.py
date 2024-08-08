@@ -3,23 +3,25 @@ from typing import Optional
 from typer import Typer
 from typer import Argument
 from typing_extensions import Annotated
-from rich.console import Console
-from rich.markdown import Markdown
+# from rich.console import Console
+# from rich.markdown import Markdown
 from rich import print as rprint
 
-import sqlite3
+# import sqlite3
 from uuid import uuid4
 import asyncio
 import os
+# import sys
 
 from .get_data import initialize_db
 from .get_data import get_sessions
 from .get_data import create_session
+from .selector import option_panel
 
 app = Typer()
 client = OpenAI()
 
-console = Console()
+# console = Console()
 
 
 home_dir = os.path.expanduser("~/.config/")
@@ -28,45 +30,40 @@ db_path = os.path.join(data_path, "database.db")
 
 
 @app.command()
-def main(prompt: Annotated[Optional[str], Argument()] = None):
+def send(prompt: Annotated[Optional[str], Argument()] = None):
 
     initialize_db()
-    if prompt is None:
-        sessions = get_sessions()
-
-        # Print all sessions properly
-        rprint("[bold green]Saved Sessions[bold green/]")
-        sessions = sessions.__reversed__()
-        for session in sessions:
-            rprint(f"[bold red]{session['id']}[bold red/]: ", end="")
-            rprint(f"{session['title']}")
-        return
-
     uuid = str(uuid4())[:8]
+
+    # TODO:
+    # - create_session return is necessary?
     respuesta = asyncio.run(create_session(prompt, uuid))
 
-    # response = client.chat.completions.create(
-    #     model="gpt-4o",
-    #     messages=[
-    #         {
-    #           "role": "user",
-    #           "content": [
-    #               {
-    #                   "type": "text",
-    #                   "text": f"{prompt}"
-    #               }
-    #           ]
-    #         }
-    #     ],
-    #     temperature=1,
-    #     max_tokens=1024,
-    #     top_p=1,
-    #     frequency_penalty=0,
-    #     presence_penalty=0
-    # )
-    # # md = Markdown(response.choices[0].message.content)
-    # # console.print(md)
-    # print(response)
+
+# TODO:
+# - gpt send --new : flag for new sessions?
+@app.command()
+def select():
+    initialize_db()
+
+    sessions = get_sessions()
+
+    rprint("[bold green]Sessions[bold green/]")
+
+    sessions.reverse()
+
+    session_name = [session['title'] for session in sessions]
+
+    selection = option_panel(session_name)
+
+    msg = f"Actual Session: [italic blue]{
+        sessions[selection]['title']}[italic blue/]"
+
+    rprint(f"{msg}" + ' ' * (79 - len(msg) if 79 - len(msg) > 0 else 0))
+
+    # TODO:
+    # - Edit row of global config database in
+    # configuration.actual_session column to remember actual session.
 
 
 if __name__ == "__main__":
