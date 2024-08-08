@@ -12,30 +12,6 @@ from openai import AsyncOpenAI
 
 logging.basicConfig(level=logging.INFO)
 
-initial_query = """
-CREATE TABLE IF NOT EXISTS session (
-  id TEXT PRIMARY KEY NOT NULL,
-  title TEXT
-);
-
-CREATE TABLE IF NOT EXISTS chat (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  session_id TEXT NOT NULL REFERENCES session(id),
-  role TEXT NOT NULL,
-  content TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS configuration (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  session_id TEXT NOT NULL REFERENCES session(id),
-  temperature FLOAT NOT NULL,
-  max_tokens INT NOT NULL,
-  top_p FLOAT NOT NULL,
-  frequency_penalty FLOAT NOT NULL,
-  presence_penalty FLOAT NOT NULL
-);
-"""
-
 home_dir = os.path.expanduser("~/.config/")
 data_path = os.path.join(home_dir, "terminal-gpt")
 db_path = os.path.join(data_path, "database.db")
@@ -49,6 +25,30 @@ logging.getLogger("openai").setLevel(logging.WARNING)
 
 def initialize_db():
     # Check if .terminal-gpt directory exists
+
+    initial_query = """
+    CREATE TABLE IF NOT EXISTS session (
+      id TEXT PRIMARY KEY NOT NULL,
+      title TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS chat (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL REFERENCES session(id),
+      role TEXT NOT NULL,
+      content TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS configuration (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL REFERENCES session(id),
+      temperature FLOAT NOT NULL,
+      max_tokens INT NOT NULL,
+      top_p FLOAT NOT NULL,
+      frequency_penalty FLOAT NOT NULL,
+      presence_penalty FLOAT NOT NULL
+    );
+    """
     if not os.path.exists(data_path):
         logging.info("Data directory not found. Creating data directory...")
         os.makedirs(data_path)
@@ -92,7 +92,7 @@ e(content='Hola, ¿cómo estás? ¿En qué puedo ayudarte hoy?', refusal=None, r
 
 async def send_prompt(messages: list):
     stream = await client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         messages=messages,
         temperature=1,
         max_tokens=1024,
@@ -162,10 +162,15 @@ async def create_session(prompt: str, session_id: str):
     Eres un asistente responde solo lo referente al prompt,
     omite los saludos o despedidas.
     Cuando respondas, deberas devolver un texto de la siquiente manera:
-    
-    Titulo corto sobre lo que trata tu respuesta
 
-    Tu respuesta
+    <Titulo> El titulo de la respuesta
+
+    <Tu respuesta> La respuesta a enviar
+
+    Omite los <> que escribí y su interior, recuerda que es solo para señalarte
+    la estructura, no los incluyas en tu respuesta.
+    En la parte del <Titulo> no incluyas estilos markdown, solo el
+    texto plano
     """
 
     initial_sys_message = {
@@ -232,7 +237,7 @@ async def create_session(prompt: str, session_id: str):
 
 if __name__ == "__main__":
     initialize_db()
-    sessions = get_sessions()
+    # sessions = get_sessions()
 
     # # Print all sessions properly
     # rprint("[bold blue]Saved Sessions[bold blue/]")
