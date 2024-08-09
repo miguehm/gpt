@@ -4,8 +4,8 @@ import readchar
 
 def clear_opc(list_len: int):
     # Limpia ambas líneas
-    sys.stdout.write('\033[A' * 1 + '\r' + ' ' *
-                     30 + '\n' + ' ' * 30 + '\r')
+    sys.stdout.write(
+        '\033[A' * 1 + '\r' + ' ' * 30 + '\n' + ' ' * 30 + '\r')
     sys.stdout.flush()
 
     # Mueve el cursor de vuelta arriba
