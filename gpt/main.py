@@ -11,7 +11,7 @@ from rich import print as rprint
 from uuid import uuid4
 import asyncio
 import os
-# import sys
+import sys
 
 from .get_data import initialize_db
 from .get_data import get_sessions
@@ -59,7 +59,10 @@ def select():
     msg = f"Actual Session: [italic blue]{
         sessions[selection]['title']}[italic blue/]"
 
-    rprint(f"{msg}" + ' ' * (79 - len(msg) if 79 - len(msg) > 0 else 0))
+    sys.stdout.write(' ' * 79 + "\n")
+    sys.stdout.flush()
+    sys.stdout.write('\033[A' * 1)
+    rprint(f'{msg}')
 
     # TODO:
     # - Edit row of global config database in
