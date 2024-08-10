@@ -58,12 +58,19 @@ def cont(prompt: Annotated[Optional[str], Argument()] = None):
     table = config_table.search(Query().app_name == 'gpt')
     table = table[0]
     actual_session_uuid = table['actual_session']
+    if actual_session_uuid == "":
+        rprint("[bold blue]You don't created any session yet.[bold blue/]")
+        rprint("""
+            Begin a new session using:
+            \t[italic]gpt new '[PROMPT]'[italic/]
+            """)
+        return
     # print(actual_session_uuid)
     respuesta = asyncio.run(cont_session(prompt, actual_session_uuid))
 
 # TODO:
 # - [x] gpt new: from `gpt select`. Creates new session
-# - [ ] gpt cont: Continue conversation based on actual_session config variable
+# - [x] gpt cont: Continue conversation based on actual_session config variable
 
 
 @app.command()
@@ -77,6 +84,14 @@ def select():
     sessions = get_sessions()
 
     rprint("[bold green]Sessions[bold green/]")
+
+    if sessions.__len__() == 0:
+        rprint("[bold blue]You don't created any session yet.[bold blue/]")
+        rprint("""
+            Begin a new session using:
+            \t[italic]gpt new '[PROMPT]'[italic/]
+            """)
+        return
 
     sessions.reverse()
 
