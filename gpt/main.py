@@ -31,6 +31,10 @@ config_path = os.path.join(data_path, "config.json")
 
 @app.command()
 def new(prompt: Annotated[Optional[str], Argument()] = None):
+    """
+    gpt new "[PROMPT]"
+    - Begin a new conversation
+    """
 
     initialize_db()
 
@@ -43,6 +47,10 @@ def new(prompt: Annotated[Optional[str], Argument()] = None):
 
 @app.command()
 def cont(prompt: Annotated[Optional[str], Argument()] = None):
+    """
+    gpt cont "[PROMPT]"
+    - Continue ACTUAL SESSION conversation
+    """
     initialize_db()
 
     config = TinyDB(config_path)
@@ -60,6 +68,10 @@ def cont(prompt: Annotated[Optional[str], Argument()] = None):
 
 @app.command()
 def select():
+    """
+    gpt select
+    - Select an ACTUAL SESSION for continue conversation
+    """
     initialize_db()
 
     sessions = get_sessions()
