@@ -15,6 +15,7 @@ import sys
 from .get_data import initialize_db
 from .get_data import get_sessions
 from .get_data import new_session
+from .get_data import cont_session
 from .selector import option_panel
 
 app = Typer()
@@ -32,6 +33,7 @@ config_path = os.path.join(data_path, "config.json")
 def new(prompt: Annotated[Optional[str], Argument()] = None):
 
     initialize_db()
+
     uuid = str(uuid4())[:8]
 
     # TODO:
@@ -39,9 +41,23 @@ def new(prompt: Annotated[Optional[str], Argument()] = None):
     respuesta = asyncio.run(new_session(prompt, uuid))
 
 
+@app.command()
+def cont(prompt: Annotated[Optional[str], Argument()] = None):
+    initialize_db()
+
+    config = TinyDB(config_path)
+    config_table = config.table('configuration')
+    table = config_table.search(Query().app_name == 'gpt')
+    table = table[0]
+    actual_session_uuid = table['actual_session']
+    # print(actual_session_uuid)
+    respuesta = asyncio.run(cont_session(prompt, actual_session_uuid))
+
 # TODO:
 # - [x] gpt new: from `gpt select`. Creates new session
 # - [ ] gpt cont: Continue conversation based on actual_session config variable
+
+
 @app.command()
 def select():
     initialize_db()
