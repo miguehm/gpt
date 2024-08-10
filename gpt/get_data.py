@@ -183,7 +183,7 @@ def set_session_title(id: str, title: str):
     conn.close()
 
 
-async def create_session(prompt: str, session_id: str):
+async def new_session(prompt: str, session_id: str):
 
     # create session in database
     insert_session_id(session_id)
@@ -260,7 +260,7 @@ if __name__ == "__main__":
     #     print(f"{session['id']}: {session['title']}")
 
     uuid = str(uuid4())[:8]
-    respuesta = asyncio.run(create_session(
+    respuesta = asyncio.run(new_session(
         "Tipos de dato en rust",
         uuid))
 
