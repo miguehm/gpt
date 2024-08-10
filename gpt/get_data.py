@@ -183,17 +183,28 @@ def set_session_title(id: str, title: str):
     conn.close()
 
 
-async def new_session(prompt: str, session_id: str):
-
-    # create session in database
-    insert_session_id(session_id)
-
-    # config file
+def get_config_data(config_path):
     config = TinyDB(config_path)
     config_table = config.table('configuration')
     config_table_search = config_table.search(
         Query().app_name == 'gpt')
     table_data = config_table_search[0]
+    return table_data
+
+
+def update_config_data(config_path, data: dict):
+    config = TinyDB(config_path)
+    config_table = config.table('configuration')
+    config_table.update(data,
+                        Query().app_name == 'gpt')
+
+
+async def new_session(prompt: str, session_id: str):
+
+    # create session in database
+    insert_session_id(session_id)
+
+    table_data = get_config_data(config_path)
     system_message = table_data['system_message']
 
     messages = []
@@ -235,8 +246,9 @@ async def new_session(prompt: str, session_id: str):
     result = "\n".join(result.split("\n")[2:])
 
     # update actual session
-    config_table.update({'actual_session': session_id},
-                        Query().app_name == 'gpt')
+    update_config_data(config_path, {'actual_session': session_id})
+    # config_table.update({'actual_session': session_id},
+    #                     Query().app_name == 'gpt')
 
     insert_to_chat(session_id,
                    "system",
@@ -250,6 +262,62 @@ async def new_session(prompt: str, session_id: str):
 
     # return messages
 
+
+def get_chat(session_id: str) -> list:
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # select role, content from chat where session_id = session_id
+    cursor.execute("SELECT role, content FROM chat WHERE session_id = ?",
+                   (session_id,))
+    chat = cursor.fetchall()
+
+    # print(chat)
+    messages: list = []
+
+    for message in chat:
+        role = message[0]
+        content = message[1]
+        base_message = {
+            "role": role,
+            "content": [
+                {
+                    "type": "text",
+                    "text": content
+                }
+            ]
+        }
+        messages.append(base_message)
+
+    return messages
+
+
+async def cont_session(prompt: str, session_id: str):
+
+    messages: list = get_chat(session_id)
+
+    user_message = {
+        "role": 'user',
+        'content': [
+            {
+                'type': 'text',
+                'text': prompt
+            }
+        ]
+    }
+
+    messages.append(user_message)
+
+    table_data = get_config_data(config_path)
+    try:
+        result = await send_prompt(messages, table_data)
+    except Exception as e:
+        print(e)
+        return None
+
+    insert_to_chat(session_id, "assistant", result)
+
+
 if __name__ == "__main__":
     initialize_db()
     # sessions = get_sessions()
@@ -259,9 +327,11 @@ if __name__ == "__main__":
     # for session in sessions:
     #     print(f"{session['id']}: {session['title']}")
 
-    uuid = str(uuid4())[:8]
-    respuesta = asyncio.run(new_session(
-        "Tipos de dato en rust",
-        uuid))
+    # uuid = str(uuid4())[:8]
+    # respuesta = asyncio.run(new_session(
+    #     "Tipos de dato en rust",
+    #     uuid))
 
     # print(respuesta)
+
+    # get_chat('ad374613')
