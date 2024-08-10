@@ -4,17 +4,20 @@ import sqlite3
 import asyncio
 from uuid import uuid4
 
-from rich import print as rprint
+# from rich import print as rprint
 from rich.live import Live
 from rich.console import Console
 from rich.markdown import Markdown
 from openai import AsyncOpenAI
+
+from tinydb import TinyDB, Query
 
 logging.basicConfig(level=logging.INFO)
 
 home_dir = os.path.expanduser("~/.config/")
 data_path = os.path.join(home_dir, "terminal-gpt")
 db_path = os.path.join(data_path, "database.db")
+config_path = os.path.join(data_path, "config.json")
 
 client = AsyncOpenAI()
 console = Console(width=79)
@@ -27,7 +30,7 @@ def initialize_db():
     # Check if .terminal-gpt directory exists
 
     # TODO:
-    # - Initial configuration query
+    # [x] Initial configuration query
     initial_query = """
     CREATE TABLE IF NOT EXISTS session (
       id TEXT PRIMARY KEY NOT NULL,
@@ -40,17 +43,23 @@ def initialize_db():
       role TEXT NOT NULL,
       content TEXT NOT NULL
     );
-
-    CREATE TABLE IF NOT EXISTS configuration (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      session_id TEXT NOT NULL REFERENCES session(id),
-      temperature FLOAT NOT NULL,
-      max_tokens INT NOT NULL,
-      top_p FLOAT NOT NULL,
-      frequency_penalty FLOAT NOT NULL,
-      presence_penalty FLOAT NOT NULL
-    );
     """
+
+    system_message = """
+    Eres un asistente responde solo lo referente al prompt,
+    omite los saludos o despedidas.
+    Cuando respondas, deberas devolver un texto de la siquiente manera:
+
+    <Titulo> El titulo de la respuesta
+
+    <Tu respuesta> La respuesta a enviar
+
+    Omite los <> que escribí y su interior, recuerda que es solo para señalarte
+    la estructura, no los incluyas en tu respuesta.
+    En la parte del <Titulo> no incluyas estilos markdown, solo el
+    texto plano
+    """
+
     if not os.path.exists(data_path):
         logging.info("Data directory not found. Creating data directory...")
         os.makedirs(data_path)
@@ -69,6 +78,28 @@ def initialize_db():
     else:
         logging.info("Database file has been created")
 
+    if not os.path.exists(config_path):
+        logging.info("Configuration not found. Creating json file...")
+
+        config = TinyDB(config_path)
+
+        config_table = config.table('configuration')
+
+        config_table.insert({
+            'app_name': 'gpt',
+            'temperature': '1',
+            'num_tokens': '1024',
+            'top_p': '0',
+            'frecuency_penalty': '0',
+            'presence_penalty': '0',
+            'stream': 'True',
+            'model': 'gpt-4o-mini',
+            'system_message': system_message,
+            'actual_session': ''})
+        logging.info("Configuration file created successfully")
+    else:
+        logging.info("Configuration file has been created")
+
 
 def get_sessions() -> dict:
     # initialize_db()
@@ -84,16 +115,24 @@ def get_sessions() -> dict:
     return sessions
 
 
-async def send_prompt(messages: list):
+async def send_prompt(messages: list, table_data: dict):
+    model = table_data['model']
+    temperature = float(table_data['temperature'])
+    max_tokens = int(table_data['num_tokens'])
+    top_p = float(table_data['top_p'])
+    frequency_penalty = float(table_data['frecuency_penalty'])
+    presence_penalty = float(table_data['presence_penalty'])
+    stream = bool(table_data['stream'])
+
     stream = await client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=model,
         messages=messages,
-        temperature=1,
-        max_tokens=1024,
-        top_p=1,
-        frequency_penalty=0,
-        presence_penalty=0,
-        stream=True
+        temperature=temperature,
+        max_tokens=max_tokens,
+        top_p=top_p,
+        frequency_penalty=frequency_penalty,
+        presence_penalty=presence_penalty,
+        stream=stream
     )
 
     result = ""
@@ -149,30 +188,22 @@ async def create_session(prompt: str, session_id: str):
     # create session in database
     insert_session_id(session_id)
 
+    # config file
+    config = TinyDB(config_path)
+    config_table = config.table('configuration')
+    config_table_search = config_table.search(
+        Query().app_name == 'gpt')
+    table_data = config_table_search[0]
+    system_message = table_data['system_message']
+
     messages = []
-
-    # add option to personalize system text
-    system_text = """
-    Eres un asistente responde solo lo referente al prompt,
-    omite los saludos o despedidas.
-    Cuando respondas, deberas devolver un texto de la siquiente manera:
-
-    <Titulo> El titulo de la respuesta
-
-    <Tu respuesta> La respuesta a enviar
-
-    Omite los <> que escribí y su interior, recuerda que es solo para señalarte
-    la estructura, no los incluyas en tu respuesta.
-    En la parte del <Titulo> no incluyas estilos markdown, solo el
-    texto plano
-    """
 
     initial_sys_message = {
         "role": "system",
         "content": [
             {
                 "type": "text",
-                "text": system_text
+                "text": system_message
             }
         ]
     }
@@ -190,22 +221,10 @@ async def create_session(prompt: str, session_id: str):
     messages.append(initial_user_message)
 
     try:
-        result = await send_prompt(messages)
+        result = await send_prompt(messages, table_data)
     except Exception as e:
         print(e)
         return None
-
-    # json_result = {
-    #     "role": "assistant",
-    #     "content": [
-    #         {
-    #             "type": "text",
-    #             "text": result
-    #         }
-    #     ]
-    # }
-    #
-    # messages.append(json_result)
 
     # get the first line of a string
     title = result.split("\n")[0]
@@ -215,7 +234,9 @@ async def create_session(prompt: str, session_id: str):
     # remove the firsts two lines of a string
     result = "\n".join(result.split("\n")[2:])
 
-    # set_session_title(session_id, title)
+    # update actual session
+    config_table.update({'actual_session': session_id},
+                        Query().app_name == 'gpt')
 
     insert_to_chat(session_id,
                    "system",
