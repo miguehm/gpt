@@ -3,8 +3,7 @@ from typing import Optional
 from typer import Typer
 from typer import Argument
 from typing_extensions import Annotated
-# from rich.console import Console
-# from rich.markdown import Markdown
+from tinydb import TinyDB, Query
 from rich import print as rprint
 
 # import sqlite3
@@ -23,10 +22,10 @@ client = OpenAI()
 
 # console = Console()
 
-
 home_dir = os.path.expanduser("~/.config/")
 data_path = os.path.join(home_dir, "terminal-gpt")
 db_path = os.path.join(data_path, "database.db")
+config_path = os.path.join(data_path, "config.json")
 
 
 @app.command()
@@ -56,17 +55,20 @@ def select():
 
     selection = option_panel(session_name)
 
-    msg = f"Actual Session: [italic blue]{
-        sessions[selection]['title']}[italic blue/]"
+    title = sessions[selection]['title']
+    id = sessions[selection]['id']
+
+    config = TinyDB(config_path)
+    config_table = config.table('configuration')
+    config_table.update({'actual_session': id},
+                        Query().app_name == 'gpt')
+
+    msg = f"Actual Session: [italic blue]{title}[italic blue/]"
 
     sys.stdout.write(' ' * 79 + "\n")
     sys.stdout.flush()
     sys.stdout.write('\033[A' * 1)
     rprint(f'{msg}')
-
-    # TODO:
-    # - Edit row of global config database in
-    # configuration.actual_session column to remember actual session.
 
 
 if __name__ == "__main__":
