@@ -48,16 +48,13 @@ def initialize_db():
     system_message = """
     Eres un asistente responde solo lo referente al prompt,
     omite los saludos o despedidas.
-    Cuando respondas, deberas devolver un texto de la siquiente manera:
-
-    <Titulo> El titulo de la respuesta
-
-    <Tu respuesta> La respuesta a enviar
-
-    Omite los <> que escribí y su interior, recuerda que es solo para señalarte
-    la estructura, no los incluyas en tu respuesta.
-    En la parte del <Titulo> no incluyas estilos markdown, solo el
-    texto plano
+    En la primera linea incluiras el titulo del prompt (no incluyas
+    estilos markdown), despues dejarás una linea en blanco y
+    escribiras el prompt que ibas a enviar desde el principio.
+    
+    Responde brevemente y de forma concisa, sin embago, si y solo si el usuario
+    te pide una explicación detallada, hazlo, y despues continua siendo
+    breve y conciso.
     """
 
     if not os.path.exists(data_path):
@@ -101,7 +98,7 @@ def initialize_db():
         logging.info("Configuration file has been created")
 
 
-def get_sessions() -> dict:
+def get_sessions() -> list:
     # initialize_db()
     # Connect to database
     conn = sqlite3.connect(db_path)
