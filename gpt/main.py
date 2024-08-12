@@ -20,6 +20,7 @@ from .get_data import cont_session
 from .get_data import get_config_data
 from .get_data import update_config_data
 from .get_data import check_log
+from .get_data import print_history
 from .selector import option_panel
 
 app = Typer()
@@ -130,6 +131,15 @@ def log():
     else:
         update_config_data(config_path, {'log': '1'})
         rprint("Log mode [bold green]True[bold green/]")
+
+
+@app.command()
+def history():
+
+    table: dict = get_config_data(config_path)
+    actual_session_uuid: str = str(table['actual_session'])
+
+    print_history(actual_session_uuid)
 
 
 if __name__ == "__main__":

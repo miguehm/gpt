@@ -3,6 +3,7 @@ import logging
 from rich.live import Live
 from rich.console import Console
 from rich.markdown import Markdown
+from rich import print as rprint
 from openai import AsyncOpenAI
 import sqlite3
 from tinydb import TinyDB, Query
@@ -327,6 +328,7 @@ async def cont_session(prompt: str, session_id: str):
         print(e)
         return None
 
+    insert_to_chat(session_id, "user", prompt)
     insert_to_chat(session_id, "assistant", result)
 
 
@@ -342,8 +344,32 @@ def check_log():
         logging.basicConfig(level=logging.CRITICAL)
 
 
+def print_history(session_id: str):
+    history = get_chat(session_id)
+
+    # text: str = ""
+    for message in history:
+        role = message['role']
+
+        # capitalize text
+        role = role.capitalize()
+
+        if role == 'System':
+            continue
+        if role == 'Assistant':
+            rprint(f"\n[bold magenta]> {role}[bold magenta/]")
+        if role == 'User':
+            rprint(f"\n[bold yellow1]> {role}[bold yellow1/]")
+
+        content = message['content'][0]['text']
+
+        md = Markdown(content)
+        console.print(md)
+
+
 if __name__ == "__main__":
     initialize_db()
+    print_history('d036f61e')
     # sessions = get_sessions()
 
     # # Print all sessions properly
