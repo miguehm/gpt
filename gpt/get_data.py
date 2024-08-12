@@ -84,7 +84,7 @@ def initialize_db() -> None:
         config_table.insert({
             'app_name': 'gpt',
             'temperature': '1',
-            'num_tokens': '1024',
+            'max_tokens': '1024',
             'top_p': '0',
             'frecuency_penalty': '0',
             'presence_penalty': '0',
@@ -117,23 +117,23 @@ async def send_prompt(messages: list, table_data: dict) -> str:
     Send a promt in stream mode as default
     """
 
-    model = table_data['model']
-    temperature = float(table_data['temperature'])
-    max_tokens = int(table_data['num_tokens'])
-    top_p = float(table_data['top_p'])
-    frequency_penalty = float(table_data['frecuency_penalty'])
-    presence_penalty = float(table_data['presence_penalty'])
-    stream = bool(table_data['stream'])
+    # model = table_data['model']
+    # temperature = float(table_data['temperature'])
+    # max_tokens = int(table_data['max_tokens'])
+    # top_p = float(table_data['top_p'])
+    # frequency_penalty = float(table_data['frecuency_penalty'])
+    # presence_penalty = float(table_data['presence_penalty'])
+    # stream = bool(table_data['stream'])
 
     stream = await client.chat.completions.create(
-        model=model,
+        model=table_data['model'],
         messages=messages,
-        temperature=temperature,
-        max_tokens=max_tokens,
-        top_p=top_p,
-        frequency_penalty=frequency_penalty,
-        presence_penalty=presence_penalty,
-        stream=stream
+        temperature=table_data['temperature'],
+        max_tokens=table_data['max_tokens'],
+        top_p=table_data['top_p'],
+        frequency_penalty=table_data['frequency_penalty'],
+        presence_penalty=table_data['presence_penalty'],
+        stream=table_data['stream']
     )
 
     result = ""
@@ -210,7 +210,7 @@ def get_config_data(config_path) -> dict:
     table_data: dict = config_table_search[0]
 
     temperature: float = float(table_data['temperature'])
-    num_tokens: int = int(table_data['num_tokens'])
+    max_tokens: int = int(table_data['max_tokens'])
     top_p: float = float(table_data['top_p'])
     frequency_penalty: float = float(table_data['frecuency_penalty'])
     presence_penalty: float = float(table_data['presence_penalty'])
@@ -222,7 +222,7 @@ def get_config_data(config_path) -> dict:
 
     return {
         'temperature': temperature,
-        'num_tokens': num_tokens,
+        'max_tokens': max_tokens,
         'top_p': top_p,
         'frequency_penalty': frequency_penalty,
         'presence_penalty': presence_penalty,
@@ -434,7 +434,10 @@ if __name__ == "__main__":
     initialize_db()
     # print_history('d036f61e')
     # show_config()
-    edit_config()
+    # config = get_config_data(config_path)
+    # for key, value in config.items():
+    #     print(key, type(value))
+    # edit_config()
     # sessions = get_sessions()
 
     # # Print all sessions properly
