@@ -10,16 +10,18 @@ A CLI tool send prompts to chatgpt
   - [x] Session database file
 - [ ] Config menu.
   - [ ] Config show.
-  - [ ] Modify using flag.
+  - [ ] Modify using flag?
 - [ ] `--hot` to quick responses (Toggle between 4o and 4o-mini).
 - [ ] Multiple chats.
-  - [ ] Show history.
+  - [x] Show history.
   - [x] Send chat history for more context.
   - [ ] Delete chats via `gpt delete`.
-  - [ ] Modify chat title.
+  - [ ] Modify chat title?
 - [ ] Sessions Selector.
   - [x] Selection using UP/DOWN keys.
   - [ ] Paginate selection list using LEFT/RIGHT keys.
+- [x] Log mode
+  - [x] Toogle log mode
 
 ## Installation
 
@@ -30,7 +32,7 @@ A CLI tool send prompts to chatgpt
 - Download the latest version from [releases](https://github.com/miguehm/gpt/releases).
 
 ```bash
-pip install gpt-0.3-py3-none-any.whl
+pip install gpt-0.4-py3-none-any.whl
 ```
 
 ## Auth to OpenAI
