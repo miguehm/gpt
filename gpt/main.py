@@ -31,7 +31,8 @@ data_path = os.path.join(home_dir, "terminal-gpt")
 db_path = os.path.join(data_path, "database.db")
 config_path = os.path.join(data_path, "config.json")
 
-check_log()
+if os.path.exists(db_path):
+    check_log()
 
 
 @app.command()

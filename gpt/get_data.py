@@ -91,7 +91,7 @@ def initialize_db() -> None:
             'model': 'gpt-4o-mini',
             'system_message': system_message,
             'actual_session': '',
-            'log': 'False'})
+            'log': '0'})
         logging.info("Configuration file created successfully")
     else:
         logging.info("Configuration file has been created")
