@@ -7,6 +7,7 @@ from rich import print as rprint
 from openai import AsyncOpenAI
 import sqlite3
 from tinydb import TinyDB, Query
+from .selector import option_panel
 
 # logging.basicConfig(level=logging.INFO)
 
@@ -48,7 +49,7 @@ def initialize_db() -> None:
     En la primera linea incluiras el titulo del prompt (no incluyas
     estilos markdown), despues dejarás una linea en blanco y
     escribiras el prompt que ibas a enviar desde el principio.
-    
+
     Responde brevemente y de forma concisa, sin embago, si y solo si el usuario
     te pide una explicación detallada, hazlo, y despues continua siendo
     breve y conciso.
@@ -91,7 +92,7 @@ def initialize_db() -> None:
             'model': 'gpt-4o-mini',
             'system_message': system_message,
             'actual_session': '',
-            'log': '0'})
+            'log': 'False'})
         logging.info("Configuration file created successfully")
     else:
         logging.info("Configuration file has been created")
@@ -207,13 +208,39 @@ def get_config_data(config_path) -> dict:
     config_table_search = config_table.search(
         Query().app_name == 'gpt')
     table_data: dict = config_table_search[0]
-    return table_data
+
+    temperature: float = float(table_data['temperature'])
+    num_tokens: int = int(table_data['num_tokens'])
+    top_p: float = float(table_data['top_p'])
+    frequency_penalty: float = float(table_data['frecuency_penalty'])
+    presence_penalty: float = float(table_data['presence_penalty'])
+    stream: bool = True if table_data['stream'] == 'True' else False
+    model: str = table_data['model']
+    system_message: str = table_data['system_message']
+    actual_session: str = table_data['actual_session']
+    log: bool = True if table_data['log'] == 'True' else False
+
+    return {
+        'temperature': temperature,
+        'num_tokens': num_tokens,
+        'top_p': top_p,
+        'frequency_penalty': frequency_penalty,
+        'presence_penalty': presence_penalty,
+        'stream': stream,
+        'model': model,
+        'system_message': system_message,
+        'actual_session': actual_session,
+        'log': log
+    }
 
 
 def update_config_data(config_path, data: dict) -> None:
     """
     Update configuration data from config.json file
     """
+
+    for key, value in data.items():
+        data[key] = str(value)
 
     logging.info("Updating configuration data")
     config = TinyDB(config_path)
@@ -334,7 +361,7 @@ async def cont_session(prompt: str, session_id: str):
 
 def check_log():
     table: dict = get_config_data(config_path)
-    log_status: int = int(table['log'])
+    log_status: bool = table['log']
 
     if log_status:
         logging.basicConfig(
@@ -367,9 +394,47 @@ def print_history(session_id: str):
         console.print(md)
 
 
+def show_config() -> None:
+    config: dict = get_config_data(config_path)
+
+    rprint("[bold green]Configuration[bold green/]")
+
+    result: str = "Attribute | Value\n-|-\n"
+
+    for key, value in config.items():
+        # TODO:
+        # - [ ] custom system message wrapped in default system message
+        if key == 'system_message' or key == 'app_name':
+            continue
+        result += f"{key} | {value}\n"
+
+    md = Markdown(result)
+    console.print(md)
+
+
+def edit_config():
+    config = get_config_data(config_path)
+    del config['system_message']
+    del config['log']
+    del config['stream']
+
+    attributes = list(config.keys())
+
+    option = option_panel(attributes)
+
+    attr_name: str = attributes[option]
+    selection = config[attr_name]
+    selection_type: str = type(selection).__name__
+    selection_type = selection_type.title()
+
+    print(f"Selected: {selection}, type: {selection_type} ")
+
+
 if __name__ == "__main__":
     initialize_db()
-    print_history('d036f61e')
+    # print_history('d036f61e')
+    # show_config()
+    edit_config()
     # sessions = get_sessions()
 
     # # Print all sessions properly
