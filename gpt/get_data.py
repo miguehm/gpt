@@ -7,7 +7,7 @@ from openai import AsyncOpenAI
 import sqlite3
 from tinydb import TinyDB, Query
 
-logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.INFO)
 
 # directories
 home_dir = os.path.expanduser("~/.config/")
@@ -89,7 +89,8 @@ def initialize_db() -> None:
             'stream': 'True',
             'model': 'gpt-4o-mini',
             'system_message': system_message,
-            'actual_session': ''})
+            'actual_session': '',
+            'log': 'False'})
         logging.info("Configuration file created successfully")
     else:
         logging.info("Configuration file has been created")

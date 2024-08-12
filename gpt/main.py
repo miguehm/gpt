@@ -11,6 +11,7 @@ from uuid import uuid4
 import asyncio
 import os
 import sys
+import logging
 
 from .get_data import initialize_db
 from .get_data import get_sessions
@@ -25,6 +26,24 @@ home_dir = os.path.expanduser("~/.config/")
 data_path = os.path.join(home_dir, "terminal-gpt")
 db_path = os.path.join(data_path, "database.db")
 config_path = os.path.join(data_path, "config.json")
+
+
+def log_status():
+    config = TinyDB(config_path)
+    config_table = config.table('configuration')
+    query_table = config_table.search(Query().app_name == 'gpt')
+    table: dict = query_table[0]
+    log_status: int = int(table['log'])
+
+    if log_status:
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    else:
+        logging.basicConfig(level=logging.CRITICAL)
+
+
+log_status()
 
 
 @app.command()
