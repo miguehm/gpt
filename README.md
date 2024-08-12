@@ -9,7 +9,7 @@ A CLI tool send prompts to chatgpt
   - [x] Config file
   - [x] Session database file
 - [ ] Config menu.
-  - [ ] Config show.
+  - [x] Config show.
   - [ ] Modify using flag?
 - [ ] `--hot` to quick responses (Toggle between 4o and 4o-mini).
 - [ ] Multiple chats.
