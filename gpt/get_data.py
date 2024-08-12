@@ -397,7 +397,7 @@ def print_history(session_id: str):
 def show_config() -> None:
     config: dict = get_config_data(config_path)
 
-    rprint("[bold green]Configuration[bold green/]")
+    # rprint("[bold green]Configuration[bold green/]")
 
     result: str = "Attribute | Value\n-|-\n"
 

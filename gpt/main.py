@@ -151,6 +151,7 @@ def config():
     """
     gpt config - Print values of configuration file
     """
+    rprint("[bold green]Configuration[/]")
     show_config()
 
 
