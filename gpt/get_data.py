@@ -201,7 +201,6 @@ def get_config_data(config_path) -> dict:
     Get configuration data from config.json file
     """
 
-    logging.info("Getting configuration data")
     config = TinyDB(config_path)
     config_table = config.table('configuration')
     config_table_search = config_table.search(
@@ -247,6 +246,7 @@ async def new_session(prompt: str, session_id: str) -> None:
     # create session in database
     insert_session_id(session_id)
 
+    logging.info("Getting configuration data")
     table_data = get_config_data(config_path)
     system_message = table_data['system_message']
 
@@ -319,6 +319,7 @@ async def cont_session(prompt: str, session_id: str):
     user_message: dict = json_message('user', prompt)
     messages.append(user_message)
 
+    logging.info("Getting configuration data")
     table_data: dict = get_config_data(config_path)
     try:
         result = await send_prompt(messages, table_data)
@@ -327,6 +328,18 @@ async def cont_session(prompt: str, session_id: str):
         return None
 
     insert_to_chat(session_id, "assistant", result)
+
+
+def check_log():
+    table: dict = get_config_data(config_path)
+    log_status: int = int(table['log'])
+
+    if log_status:
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    else:
+        logging.basicConfig(level=logging.CRITICAL)
 
 
 if __name__ == "__main__":

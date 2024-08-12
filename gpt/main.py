@@ -17,6 +17,9 @@ from .get_data import initialize_db
 from .get_data import get_sessions
 from .get_data import new_session
 from .get_data import cont_session
+from .get_data import get_config_data
+from .get_data import update_config_data
+from .get_data import check_log
 from .selector import option_panel
 
 app = Typer()
@@ -27,23 +30,7 @@ data_path = os.path.join(home_dir, "terminal-gpt")
 db_path = os.path.join(data_path, "database.db")
 config_path = os.path.join(data_path, "config.json")
 
-
-def log_status():
-    config = TinyDB(config_path)
-    config_table = config.table('configuration')
-    query_table = config_table.search(Query().app_name == 'gpt')
-    table: dict = query_table[0]
-    log_status: int = int(table['log'])
-
-    if log_status:
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    else:
-        logging.basicConfig(level=logging.CRITICAL)
-
-
-log_status()
+check_log()
 
 
 @app.command()
@@ -127,6 +114,22 @@ def select():
     sys.stdout.flush()
     sys.stdout.write('\033[A' * 1)
     rprint(f'{msg}')
+
+
+@app.command()
+def log():
+    """
+    gpt log - Toggle log mode
+    """
+    table: dict = get_config_data(config_path)
+    log_status: int = int(table['log'])
+
+    if log_status:
+        update_config_data(config_path, {'log': '0'})
+        rprint("Log mode [bold red]False[bold red/]")
+    else:
+        update_config_data(config_path, {'log': '1'})
+        rprint("Log mode [bold green]True[bold green/]")
 
 
 if __name__ == "__main__":
