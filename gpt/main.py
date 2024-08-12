@@ -21,6 +21,7 @@ from .get_data import get_config_data
 from .get_data import update_config_data
 from .get_data import check_log
 from .get_data import print_history
+from .get_data import show_config
 from .selector import option_panel
 
 app = Typer()
@@ -124,23 +125,33 @@ def log():
     gpt log - Toggle log mode
     """
     table: dict = get_config_data(config_path)
-    log_status: int = int(table['log'])
+    log_status: bool = table['log']
 
     if log_status:
-        update_config_data(config_path, {'log': '0'})
+        update_config_data(config_path, {'log': 'False'})
         rprint("Log mode [bold red]False[bold red/]")
     else:
-        update_config_data(config_path, {'log': '1'})
+        update_config_data(config_path, {'log': 'True'})
         rprint("Log mode [bold green]True[bold green/]")
 
 
 @app.command()
 def history():
-
+    """
+    gpt history - Show message history of actual session
+    """
     table: dict = get_config_data(config_path)
     actual_session_uuid: str = str(table['actual_session'])
 
     print_history(actual_session_uuid)
+
+
+@app.command()
+def config():
+    """
+    gpt config - Print values of configuration file
+    """
+    show_config()
 
 
 if __name__ == "__main__":
