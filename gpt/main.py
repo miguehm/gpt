@@ -21,8 +21,6 @@ from .selector import option_panel
 app = Typer()
 client = OpenAI()
 
-# console = Console()
-
 home_dir = os.path.expanduser("~/.config/")
 data_path = os.path.join(home_dir, "terminal-gpt")
 db_path = os.path.join(data_path, "database.db")
@@ -30,7 +28,7 @@ config_path = os.path.join(data_path, "config.json")
 
 
 @app.command()
-def new(prompt: Annotated[Optional[str], Argument()] = None):
+def new(prompt: Annotated[Optional[str], Argument()] = None) -> None:
     """
     gpt new "[PROMPT]"
     - Begin a new conversation
@@ -38,11 +36,9 @@ def new(prompt: Annotated[Optional[str], Argument()] = None):
 
     initialize_db()
 
-    uuid = str(uuid4())[:8]
+    uuid: str = str(uuid4())[:8]
 
-    # TODO:
-    # - create_session return is necessary?
-    respuesta = asyncio.run(new_session(prompt, uuid))
+    asyncio.run(new_session(prompt, uuid))
 
 
 @app.command()
@@ -55,9 +51,9 @@ def cont(prompt: Annotated[Optional[str], Argument()] = None):
 
     config = TinyDB(config_path)
     config_table = config.table('configuration')
-    table = config_table.search(Query().app_name == 'gpt')
-    table = table[0]
-    actual_session_uuid = table['actual_session']
+    query_table = config_table.search(Query().app_name == 'gpt')
+    table: dict = query_table[0]
+    actual_session_uuid: str = table['actual_session']
     if actual_session_uuid == "":
         rprint("[bold blue]You don't created any session yet.[bold blue/]")
         rprint("""
@@ -66,11 +62,7 @@ def cont(prompt: Annotated[Optional[str], Argument()] = None):
             """)
         return
     # print(actual_session_uuid)
-    respuesta = asyncio.run(cont_session(prompt, actual_session_uuid))
-
-# TODO:
-# - [x] gpt new: from `gpt select`. Creates new session
-# - [x] gpt cont: Continue conversation based on actual_session config variable
+    asyncio.run(cont_session(prompt, actual_session_uuid))
 
 
 @app.command()
@@ -93,22 +85,25 @@ def select():
             """)
         return
 
+    # The most recent first
     sessions.reverse()
 
-    session_name = [session['title'] for session in sessions]
+    # print session panel
+    sessions_name: list = [session['title'] for session in sessions]
+    selection: int = option_panel(sessions_name)
 
-    selection = option_panel(session_name)
+    # getting data from choice
+    title: str = sessions[selection]['title']
+    id: str = sessions[selection]['id']
 
-    title = sessions[selection]['title']
-    id = sessions[selection]['id']
-
+    # Update actual session
     config = TinyDB(config_path)
     config_table = config.table('configuration')
     config_table.update({'actual_session': id},
                         Query().app_name == 'gpt')
 
-    msg = f"Actual Session: [italic blue]{title}[italic blue/]"
-
+    # Clear and print title selected choice
+    msg: str = f"Actual Session: [italic blue]{title}[italic blue/]"
     sys.stdout.write(' ' * 79 + "\n")
     sys.stdout.flush()
     sys.stdout.write('\033[A' * 1)

@@ -1,19 +1,15 @@
 import os
 import logging
-import sqlite3
-import asyncio
-from uuid import uuid4
-
-# from rich import print as rprint
 from rich.live import Live
 from rich.console import Console
 from rich.markdown import Markdown
 from openai import AsyncOpenAI
-
+import sqlite3
 from tinydb import TinyDB, Query
 
 logging.basicConfig(level=logging.INFO)
 
+# directories
 home_dir = os.path.expanduser("~/.config/")
 data_path = os.path.join(home_dir, "terminal-gpt")
 db_path = os.path.join(data_path, "database.db")
@@ -26,11 +22,11 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("openai").setLevel(logging.WARNING)
 
 
-def initialize_db():
-    # Check if .terminal-gpt directory exists
+def initialize_db() -> None:
+    """
+    Initialize chat database and configuration file
+    """
 
-    # TODO:
-    # [x] Initial configuration query
     initial_query = """
     CREATE TABLE IF NOT EXISTS session (
       id TEXT PRIMARY KEY NOT NULL,
@@ -82,6 +78,7 @@ def initialize_db():
 
         config_table = config.table('configuration')
 
+        # default conf
         config_table.insert({
             'app_name': 'gpt',
             'temperature': '1',
@@ -99,8 +96,8 @@ def initialize_db():
 
 
 def get_sessions() -> list:
-    # initialize_db()
     # Connect to database
+    logging.info("Getting sessions from database")
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
@@ -112,7 +109,11 @@ def get_sessions() -> list:
     return sessions
 
 
-async def send_prompt(messages: list, table_data: dict):
+async def send_prompt(messages: list, table_data: dict) -> str:
+    """
+    Send a promt in stream mode as default
+    """
+
     model = table_data['model']
     temperature = float(table_data['temperature'])
     max_tokens = int(table_data['num_tokens'])
@@ -144,7 +145,12 @@ async def send_prompt(messages: list, table_data: dict):
     return result
 
 
-def insert_to_chat(session_id: str, role: str, message: str):
+def insert_to_chat(session_id: str, role: str, message: str) -> None:
+    """
+    Insert a message to chat table in database
+    """
+
+    logging.info("Inserting message to chat table in database")
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute(
@@ -157,7 +163,12 @@ def insert_to_chat(session_id: str, role: str, message: str):
     conn.close()
 
 
-def insert_session_id(id: str):
+def insert_session_id(id: str) -> None:
+    """
+    Insert new session id to session table in database
+    """
+
+    logging.info("Inserting session_id to session table in database")
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute(
@@ -168,7 +179,11 @@ def insert_session_id(id: str):
     conn.close()
 
 
-def set_session_title(id: str, title: str):
+def set_session_title(id: str, title: str) -> None:
+    """
+    Insert title to session table in database
+    """
+    logging.info("Inserting title to session table in database")
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute(
@@ -180,23 +195,53 @@ def set_session_title(id: str, title: str):
     conn.close()
 
 
-def get_config_data(config_path):
+def get_config_data(config_path) -> dict:
+    """
+    Get configuration data from config.json file
+    """
+
+    logging.info("Getting configuration data")
     config = TinyDB(config_path)
     config_table = config.table('configuration')
     config_table_search = config_table.search(
         Query().app_name == 'gpt')
-    table_data = config_table_search[0]
+    table_data: dict = config_table_search[0]
     return table_data
 
 
-def update_config_data(config_path, data: dict):
+def update_config_data(config_path, data: dict) -> None:
+    """
+    Update configuration data from config.json file
+    """
+
+    logging.info("Updating configuration data")
     config = TinyDB(config_path)
     config_table = config.table('configuration')
     config_table.update(data,
                         Query().app_name == 'gpt')
 
 
-async def new_session(prompt: str, session_id: str):
+def json_message(role: str, content: str) -> dict:
+    """
+    Return a dict with base structure of a OpenAI API message
+    """
+
+    message = {
+        "role": role,
+        "content": [
+            {
+                "type": "text",
+                "text": content
+            }
+        ]
+    }
+    return message
+
+
+async def new_session(prompt: str, session_id: str) -> None:
+    """
+    Create a new session/conversation
+    """
 
     # create session in database
     insert_session_id(session_id)
@@ -206,26 +251,10 @@ async def new_session(prompt: str, session_id: str):
 
     messages = []
 
-    initial_sys_message = {
-        "role": "system",
-        "content": [
-            {
-                "type": "text",
-                "text": system_message
-            }
-        ]
-    }
+    initial_sys_message = json_message('system', system_message)
     messages.append(initial_sys_message)
 
-    initial_user_message = {
-        "role": "user",
-        "content": [
-            {
-                "type": "text",
-                "text": prompt
-            }
-        ]
-    }
+    initial_user_message = json_message('user', prompt)
     messages.append(initial_user_message)
 
     try:
@@ -236,16 +265,13 @@ async def new_session(prompt: str, session_id: str):
 
     # get the first line of a string
     title = result.split("\n")[0]
-
     set_session_title(session_id, title)
 
     # remove the firsts two lines of a string
     result = "\n".join(result.split("\n")[2:])
 
-    # update actual session
+    # update actual session in configurations
     update_config_data(config_path, {'actual_session': session_id})
-    # config_table.update({'actual_session': session_id},
-    #                     Query().app_name == 'gpt')
 
     insert_to_chat(session_id,
                    "system",
@@ -261,6 +287,10 @@ async def new_session(prompt: str, session_id: str):
 
 
 def get_chat(session_id: str) -> list:
+    """
+    Get session history from db using the session_id
+    and return a dict list of session history
+    """
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
@@ -275,15 +305,7 @@ def get_chat(session_id: str) -> list:
     for message in chat:
         role = message[0]
         content = message[1]
-        base_message = {
-            "role": role,
-            "content": [
-                {
-                    "type": "text",
-                    "text": content
-                }
-            ]
-        }
+        base_message: dict = json_message(role, content)
         messages.append(base_message)
 
     return messages
@@ -293,19 +315,10 @@ async def cont_session(prompt: str, session_id: str):
 
     messages: list = get_chat(session_id)
 
-    user_message = {
-        "role": 'user',
-        'content': [
-            {
-                'type': 'text',
-                'text': prompt
-            }
-        ]
-    }
-
+    user_message: dict = json_message('user', prompt)
     messages.append(user_message)
 
-    table_data = get_config_data(config_path)
+    table_data: dict = get_config_data(config_path)
     try:
         result = await send_prompt(messages, table_data)
     except Exception as e:

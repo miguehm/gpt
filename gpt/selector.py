@@ -2,18 +2,23 @@ import sys
 import readchar
 
 
-def clear_opc(list_len: int):
-    # Limpia ambas líneas
+def clear_opc(list_len: int) -> None:
+    """
+    Clear screen while cursor selector is moving UP/DOWN
+    """
     sys.stdout.write(
         '\033[A' * 1 + '\r' + ' ' * 30 + '\n' + ' ' * 30 + '\r')
     sys.stdout.flush()
 
-    # Mueve el cursor de vuelta arriba
     sys.stdout.write('\033[A' * (list_len))
 
 
 def option_panel(options: list) -> int:
-    selection = 0
+    """
+    Print a selection panel and return the
+    selected choice
+    """
+    selection: int = 0
     key = ''
 
     while True:
@@ -37,8 +42,6 @@ def option_panel(options: list) -> int:
         if key == readchar.key.ENTER:
             break
 
-    # sys.stdout.write(f'Option {selection} was selected.\n')
-    # sys.stdout.flush()
     return selection
 
 
