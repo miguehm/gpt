@@ -15,7 +15,7 @@ A CLI tool send prompts to chatgpt
 - [ ] Multiple chats.
   - [x] Show history.
   - [x] Send chat history for more context.
-  - [ ] Delete chats via `gpt delete`.
+  - [x] Delete chats via `gpt delete`.
   - [ ] Modify chat title?
 - [ ] Sessions Selector.
   - [x] Selection using UP/DOWN keys.
