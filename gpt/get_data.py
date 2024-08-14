@@ -8,6 +8,8 @@ from openai import AsyncOpenAI
 import sqlite3
 from tinydb import TinyDB, Query
 from .selector import option_panel
+import sys
+from time import sleep
 
 # logging.basicConfig(level=logging.INFO)
 
@@ -428,6 +430,49 @@ def edit_config():
     selection_type = selection_type.title()
 
     print(f"Selected: {selection}, type: {selection_type} ")
+
+
+# TODO:
+# - Rename this function
+def delete_session_db(session_id: str):
+    # Connect to database
+    logging.info("Deleting session")
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # BUG:
+    # - extra comma in tuple, why?
+    cursor.execute("DELETE FROM session WHERE id = ?", (session_id,))
+    cursor.execute("DELETE FROM chat WHERE session_id = ?", (session_id,))
+    conn.commit()
+    conn.close()
+
+
+def delete_session():
+    sessions = get_sessions()
+    sessions.reverse()
+
+    sessions_title = [session['title'] for session in sessions]
+
+    selection = option_panel(sessions_title)
+
+    session_id = sessions[selection]['id']
+    # TODO:
+    # - catch error
+    delete_session_db(session_id)
+
+    # Clear and print title selected choice
+    msg: str = f"[italic]{sessions_title[selection]}[/] [bold red]deleted[/]"
+    # BUG:
+    # add this to selector
+    sys.stdout.write(' ' * 79 + "\n")
+    sys.stdout.flush()
+    sys.stdout.write('\033[A' * 2)
+    # ----
+
+    rprint(f'{msg}')
+
+    # return selection
 
 
 if __name__ == "__main__":

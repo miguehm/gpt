@@ -22,6 +22,7 @@ from .get_data import update_config_data
 from .get_data import check_log
 from .get_data import print_history
 from .get_data import show_config
+from .get_data import delete_session
 from .selector import option_panel
 
 app = Typer()
@@ -31,6 +32,8 @@ home_dir = os.path.expanduser("~/.config/")
 data_path = os.path.join(home_dir, "terminal-gpt")
 db_path = os.path.join(data_path, "database.db")
 config_path = os.path.join(data_path, "config.json")
+
+initialize_db()
 
 if os.path.exists(db_path):
     check_log()
@@ -43,8 +46,6 @@ def new(prompt: Annotated[Optional[str], Argument()] = None) -> None:
     - Begin a new conversation
     """
 
-    initialize_db()
-
     uuid: str = str(uuid4())[:8]
 
     asyncio.run(new_session(prompt, uuid))
@@ -56,7 +57,7 @@ def cont(prompt: Annotated[Optional[str], Argument()] = None):
     gpt cont "[PROMPT]"
     - Continue ACTUAL SESSION conversation
     """
-    initialize_db()
+    # initialize_db()
 
     config = TinyDB(config_path)
     config_table = config.table('configuration')
@@ -80,7 +81,7 @@ def select():
     gpt select
     - Select an ACTUAL SESSION for continue conversation
     """
-    initialize_db()
+    # initialize_db()
 
     sessions = get_sessions()
 
@@ -153,6 +154,15 @@ def config():
     """
     rprint("[bold green]Configuration[/]")
     show_config()
+
+
+@app.command()
+def delete():
+    """
+    gpt delete - Delete a session
+    """
+
+    delete_session()
 
 
 if __name__ == "__main__":
